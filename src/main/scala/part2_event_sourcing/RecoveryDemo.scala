@@ -1,7 +1,7 @@
 package part2_event_sourcing
 
 import akka.actor.{ActorLogging, ActorSystem, Props}
-import akka.persistence.{PersistentActor, Recovery, RecoveryCompleted, SnapshotSelectionCriteria}
+import akka.persistence.{PersistentActor, RecoveryCompleted}
 
 object RecoveryDemo extends App {
 
@@ -12,17 +12,16 @@ object RecoveryDemo extends App {
 
     override def persistenceId: String = "recovery-actor"
 
-
     override def receiveCommand: Receive = online(0)
 
-    def online(latestPersistedEventId: Int): Receive = {
-      case Command(contents) =>
-        persist(Event(latestPersistedEventId, contents)) { event =>
-          log.info(s"Successfully persisted $event, recovery is ${if (this.recoveryFinished) "" else "NOT"} finished.")
-          context.become(online(latestPersistedEventId + 1))
-        }
+    def online(latestPersistedEventId: Int): Receive = { case Command(contents) =>
+      persist(Event(latestPersistedEventId, contents)) { event =>
+        log.info(
+          s"Successfully persisted $event, recovery is ${if (this.recoveryFinished) "" else "NOT"} finished."
+        )
+        context.become(online(latestPersistedEventId + 1))
+      }
     }
-
 
     override def receiveRecover: Receive = {
       case RecoveryCompleted =>
@@ -32,12 +31,14 @@ object RecoveryDemo extends App {
       case Event(id, contents) =>
 //        if (contents.contains("314"))
 //          throw new RuntimeException("I can't take this anymore!")
-        log.info(s"Recovered: $contents, recovery is ${if (this.recoveryFinished) "" else "NOT"} finished.")
+        log.info(
+          s"Recovered: $contents, recovery is ${if (this.recoveryFinished) "" else "NOT"} finished."
+        )
         context.become(online(id + 1))
-        /*
+      /*
           this will NOT change the event handler during recovery
           AFTER recovery the "normal" handler will be the result of ALL the stacking of context.becomes.
-         */
+       */
     }
 
     override def onRecoveryFailure(cause: Throwable, event: Option[Any]): Unit = {
@@ -49,7 +50,6 @@ object RecoveryDemo extends App {
     //    override def recovery: Recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria.Latest)
     //    override def recovery: Recovery = Recovery.none
   }
-
 
   val system = ActorSystem("RecoveryDemo")
   val recoveryActor = system.actorOf(Props[RecoveryActor], "recoveryActor")
@@ -82,5 +82,4 @@ object RecoveryDemo extends App {
    */
   recoveryActor ! Command(s"special command 1")
   recoveryActor ! Command(s"special command 2")
-
 }

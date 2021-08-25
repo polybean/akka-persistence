@@ -18,13 +18,20 @@ object EventAdapters extends App {
   // command
   case class AddGuitar(guitar: Guitar, quantity: Int)
   // event
+  // Creating new version of the events is inevitable
   case class GuitarAdded(guitarId: String, guitarModel: String, guitarMake: String, quantity: Int)
-  case class GuitarAddedV2(guitarId: String, guitarModel: String, guitarMake: String, quantity: Int, guitarType: String)
+  case class GuitarAddedV2(
+      guitarId: String,
+      guitarModel: String,
+      guitarMake: String,
+      quantity: Int,
+      guitarType: String
+  )
 
   class InventoryManager extends PersistentActor with ActorLogging {
     override def persistenceId: String = "guitar-inventory-manager"
 
-    val inventory: mutable.Map[Guitar, Int] = new mutable.HashMap[Guitar,Int]()
+    val inventory: mutable.Map[Guitar, Int] = new mutable.HashMap[Guitar, Int]()
 
     override def receiveCommand: Receive = {
       case AddGuitar(guitar @ Guitar(id, model, make, guitarType), quantity) =>

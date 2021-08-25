@@ -16,7 +16,7 @@ object Snapshots extends App {
   case class SentMessageRecord(id: Int, contents: String)
 
   object Chat {
-    def props(owner: String, contact: String) = Props(new Chat(owner, contact))
+    def props(owner: String, contact: String): Props = Props(new Chat(owner, contact))
   }
 
   class Chat(owner: String, contact: String) extends PersistentActor with ActorLogging {
@@ -77,7 +77,7 @@ object Snapshots extends App {
       commandsWithoutCheckpoint += 1
       if (commandsWithoutCheckpoint >= MAX_MESSAGES) {
         log.info("Saving checkpoint...")
-        saveSnapshot(lastMessages)  // asynchronous operation
+        saveSnapshot(lastMessages) // asynchronous operation
         commandsWithoutCheckpoint = 0
       }
     }

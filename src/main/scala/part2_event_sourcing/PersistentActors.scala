@@ -1,10 +1,9 @@
 package part2_event_sourcing
 
-import java.util.Date
-
-import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
+import akka.actor.{ActorLogging, ActorSystem, Props}
 import akka.persistence.PersistentActor
 
+import java.util.Date
 
 object PersistentActors extends App {
 
@@ -16,7 +15,7 @@ object PersistentActors extends App {
   case class Invoice(recipient: String, date: Date, amount: Int)
   case class InvoiceBulk(invoices: List[Invoice])
 
-  // Special messsages
+  // Special messages
   case object Shutdown
 
   // EVENTS
@@ -29,8 +28,7 @@ object PersistentActors extends App {
 
     override def persistenceId: String = "simple-accountant" // best practice: make it unique
 
-    /**
-      * The "normal" receive method
+    /** The "normal" receive method
       */
     override def receiveCommand: Receive = {
       case Invoice(recipient, date, amount) =>
@@ -42,8 +40,7 @@ object PersistentActors extends App {
          */
         log.info(s"Receive invoice for amount: $amount")
         persist(InvoiceRecorded(latestInvoiceId, recipient, date, amount))
-          /* time gap: all other messages sent to this actor are STASHED */
-        { e =>
+        /* time gap: all other messages sent to this actor are STASHED */ { e =>
           // SAFE to access mutable state here
 
           // update state
@@ -82,9 +79,8 @@ object PersistentActors extends App {
         log.info(s"Latest invoice id: $latestInvoiceId, total amount: $totalAmount")
     }
 
-    /**
-      Handler that will be called on recovery
-     */
+    /** Handler that will be called on recovery
+      */
     override def receiveRecover: Receive = {
       /*
         best practice: follow the logic in the persist steps of receiveCommand
@@ -128,8 +124,7 @@ object PersistentActors extends App {
     Persistence failures
    */
 
-  /**
-    * Persisting multiple events
+  /** Persisting multiple events
     *
     * persistAll
     */
@@ -140,11 +135,10 @@ object PersistentActors extends App {
     NEVER EVER CALL PERSIST OR PERSISTALL FROM FUTURES.
    */
 
-  /**
-    * Shutdown of persistent actors
+  /** Shutdown of persistent actors
     *
     * Best practice: define your own "shutdown" messages
     */
-//  accountant ! PoisonPill
-  accountant ! Shutdown
+//  accountant ! PoisonPill // PoisonPill will be placed to a separated mailbox
+  accountant ! Shutdown // Eventually reaches the context.shutdown call, which places a message to the NORMAL mailbox just as where the COMMANDS go
 }
